@@ -1,12 +1,6 @@
 package com.skobbler.sdkdemo.activity;
 
 
-import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
@@ -17,19 +11,22 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+import android.widget.ToggleButton;
+
 import com.skobbler.ngx.SKCategories.SKPOICategory;
 import com.skobbler.ngx.SKCoordinate;
 import com.skobbler.ngx.SKMaps;
 import com.skobbler.ngx.map.SKAnnotation;
-import com.skobbler.ngx.map.SKAnnotationText;
 import com.skobbler.ngx.map.SKCircle;
 import com.skobbler.ngx.map.SKCoordinateRegion;
 import com.skobbler.ngx.map.SKMapCustomPOI;
 import com.skobbler.ngx.map.SKMapPOI;
+import com.skobbler.ngx.map.SKMapSettings.SKMapFollowerMode;
 import com.skobbler.ngx.map.SKMapSurfaceListener;
 import com.skobbler.ngx.map.SKMapSurfaceView;
 import com.skobbler.ngx.map.SKMapSurfaceView.SKAnimationType;
@@ -39,7 +36,6 @@ import com.skobbler.ngx.map.SKPOICluster;
 import com.skobbler.ngx.map.SKPolygon;
 import com.skobbler.ngx.map.SKPolyline;
 import com.skobbler.ngx.map.SKScreenPoint;
-import com.skobbler.ngx.map.SKMapSettings.SKMapFollowerMode;
 import com.skobbler.ngx.map.realreach.SKRealReachListener;
 import com.skobbler.ngx.map.realreach.SKRealReachSettings;
 import com.skobbler.ngx.navigation.SKNavigationListener;
@@ -57,7 +53,6 @@ import com.skobbler.ngx.positioner.SKPosition;
 import com.skobbler.ngx.routing.SKRouteListener;
 import com.skobbler.ngx.routing.SKRouteManager;
 import com.skobbler.ngx.routing.SKRouteSettings;
-import com.skobbler.ngx.search.SKSearchResult;
 import com.skobbler.ngx.util.SKLogging;
 import com.skobbler.ngx.versioning.SKMapUpdateListener;
 import com.skobbler.ngx.versioning.SKVersioningManager;
@@ -67,6 +62,12 @@ import com.skobbler.sdkdemo.util.AdvicePlayer;
 import com.skobbler.sdkdemo.util.DemoUtils;
 import com.skobbler.sdkdemo.view.CustomCalloutView;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 
 /**
  * Activity displaying the map
@@ -74,11 +75,26 @@ import com.skobbler.sdkdemo.view.CustomCalloutView;
  * 
  */
 public class MapActivity extends Activity implements SKMapSurfaceListener, SKRouteListener, SKNavigationListener,
-        SKRealReachListener, SKPOITrackerListener, SKCurrentPositionListener, SensorEventListener, SKMapUpdateListener {
+        SKRealReachListener, SKPOITrackerListener, SKCurrentPositionListener, SensorEventListener, SKMapUpdateListener,
+        View.OnClickListener, View.OnTouchListener {
     
     
     private static final String TAG = "MapActivity";
-    
+    private ToggleButton[] toggleButtonMarkRoute;
+
+    @Override
+    public boolean onTouch(View view, MotionEvent motionEvent) {
+        if (app.getRouteEndpointId()<0)
+        {
+            return false;
+        }
+        app.addRouteEndPoint(new SKScreenPoint(motionEvent.getX(), motionEvent.getY()));
+        for(ToggleButton v : toggleButtonMarkRoute)
+            v.setChecked(false);
+        app.setRouteEndpointId(-1);
+        return false;
+    }
+
     private enum MapOption {
         MAP_DISPLAY, MAP_OVERLAYS, ALTERNATIVE_ROUTES, MAP_STYLES, REAL_REACH, TRACKS, ANNOTATIONS, ROUTING_AND_NAVIGATION, POI_TRACKING, HEAT_MAP
     }
@@ -190,7 +206,7 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
         
-        app = (DemoApplication) getApplication();
+        app = DemoApplication.getInstance();
         
         currentPositionProvider = new SKCurrentPositionProvider(this);
         currentPositionProvider.setCurrentPositionListener(this);
@@ -219,6 +235,27 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
         headingButton = (Button) findViewById(R.id.heading_button);
         
         SKVersioningManager.getInstance().setMapUpdateListener(this);
+
+
+        toggleButtonMarkRoute = new ToggleButton[] {
+                (ToggleButton)findViewById(R.id.buttonMarkRouteStart),
+                (ToggleButton)findViewById(R.id.buttonMarkRouteFinish)
+        };
+
+        for(int id : new int[]{
+                R.id.buttonMarkRouteStart,
+                R.id.buttonMarkRouteFinish,
+                R.id.buttonZoomIn,
+                R.id.buttonZoomOut,
+                R.id.buttonSearchByAddressActivity
+        })
+            findViewById(id).setOnClickListener(this);
+
+        // set the route listener to be notified of route calculation
+        // events
+        SKRouteManager.getInstance().setRouteListener(this);
+
+        mapView.setOnTouchListener(this);
     }
     
     /**
@@ -270,7 +307,12 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
             startOrientationSensor();
         }
     }
-    
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+    }
+
     @Override
     protected void onPause() {
         super.onPause();
@@ -296,6 +338,7 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
             public void run() {
                 View chessBackground = findViewById(R.id.chess_board_background);
                 chessBackground.setVisibility(View.GONE);
+                app.goTo();
             }
         });
         
@@ -339,6 +382,25 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
     public void onClick(View v) {
         
         switch (v.getId()) {
+            case R.id.buttonSearchByAddressActivity:
+                startActivity(new Intent(this, SearchByAddressActivity.class));
+                break;
+            case R.id.buttonZoomOut:
+                mapView.setZoom(mapView.getZoomLevel()*.9f);
+                break;
+            case R.id.buttonZoomIn:
+                mapView.setZoom(mapView.getZoomLevel()*1.1f);
+                break;
+            case R.id.buttonMarkRouteStart:
+            case R.id.buttonMarkRouteFinish:
+                ToggleButton tb = (ToggleButton)v;
+                app.setRouteEndpointId(-1);
+                if (tb.isChecked())
+                {
+                    app.setRouteEndpointId(v.getId() == R.id.buttonMarkRouteStart ? 0 : 1);
+                    toggleButtonMarkRoute[1-app.getRouteEndpointId()].setChecked(false);
+                }
+                break;
             case R.id.alt_route_1:
                 selectAlternativeRoute(0);
                 break;
@@ -363,7 +425,7 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
             case R.id.bottom_button:
                 if (currentMapOption == MapOption.ROUTING_AND_NAVIGATION) {
                     if (bottomButton.getText().equals(getResources().getString(R.string.calculate_route))) {
-                        launchRouteCalculation();
+                        app.launchRouteCalculation();
                     } else if (bottomButton.getText().equals(getResources().getString(R.string.start_navigation))) {
                         bottomButton.setText(getResources().getString(R.string.stop_navigation));
                         launchNavigation();
@@ -385,6 +447,7 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
                 }
                 break;
             case R.id.heading_button:
+                app.goTo();
                 if (currentPosition != null) {
                     setHeading(true);
                 } else {
@@ -444,6 +507,7 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
             case R.id.option_address_search:
                 startActivity(new Intent(this, OfflineAddressSearchActivity.class));
                 break;
+
             case R.id.option_nearby_search:
                 startActivity(new Intent(this, NearbySearchActivity.class));
                 break;
@@ -464,7 +528,7 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
                 if (trackablePOIs == null) {
                     initializeTrackablePOIs();
                 }
-                launchRouteCalculation();
+                app.launchRouteCalculation();
                 break;
             case R.id.option_heat_map:
                 currentMapOption = MapOption.HEAT_MAP;
@@ -480,28 +544,7 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
         menu.setVisibility(View.GONE);
     }
     
-    /**
-     * Launches a single route calculation
-     */
-    private void launchRouteCalculation() {
-        // get a route object and populate it with the desired properties
-        SKRouteSettings route = new SKRouteSettings();
-        // set start and destination points
-        route.setStartCoordinate(routeEndpoints[0]);
-        route.setDestinationCoordinate(routeEndpoints[1]);
-        // set the number of routes to be calculated
-        route.setNoOfRoutes(1);
-        // set the route mode
-        route.setRouteMode(SKRouteSettings.SKROUTE_BICYCLE_QUIETEST);
-        // set whether the route should be shown on the map after it's computed
-        route.setRouteExposed(true);
-        // set the route listener to be notified of route calculation
-        // events
-        SKRouteManager.getInstance().setRouteListener(this);
-        // pass the route to the calculation routine
-        SKRouteManager.getInstance().calculateRoute(route);
-    }
-    
+
     /**
      * Launches the calculation of three alternative routes
      */
@@ -790,7 +833,9 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
     public void onAllRoutesCompleted() {
         
     }
-    
+
+
+    /*
     @Override
     public void onRouteCalculationCompleted(final int statusMessage, final int routeDistance, final int routeEta,
             final boolean thisRouteIsComplete, final int id) {
@@ -825,6 +870,11 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
             SKRouteManager.getInstance().setCurrentRouteByUniqueId(id);
             // zoom to the current route
             SKRouteManager.getInstance().zoomToRoute(1, 1, 8, 8, 8, 8);
+
+            List<SKCoordinate> routePoints = SKRouteManager.getInstance().getRoutePointsForRoute(id);
+            setMarksOnRegularDistances(routePoints);
+
+
             if (currentMapOption == MapOption.ROUTING_AND_NAVIGATION) {
                 runOnUiThread(new Runnable() {
                     
@@ -846,7 +896,59 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
             launchNavigation();
         }
     }
-    
+
+
+    private void setMarksOnRegularDistances(List<SKCoordinate> routePoints) {
+        if (routePoints == null)
+            return;
+
+        int annotationId = 2;
+
+        System.err.println("The route has "+routePoints.size()+" points");
+        for(int i=1; i<routePoints.size(); i+=10)
+        {
+            SKAnnotation annotation = new SKAnnotation();
+
+            SKCoordinate location = routePoints.get(i);
+            annotation.setLocation(new SKCoordinate(location.getLongitude(),location.getLatitude()));
+            SKAnnotationText annTxt = new SKAnnotationText();
+            String annString = String.format("%3d", i);
+            annTxt.setText(annString);
+            System.err.printf("Add annotation %s, lat: %f, long: %f\n",
+                    annString,
+                    location.getLatitude(),
+                    location.getLongitude()
+                    );
+            annotation.setText(annTxt);
+            annotation.setUniqueID(annotationId++);
+            mapView.addAnnotation(annotation);
+        }
+    }
+    */
+
+    @Override
+    public void onRouteCalculationCompleted(final int statusMessage, final int routeDistance, final int routeEta, final boolean thisRouteIsComplete, final int id)
+    {
+        if (statusMessage != SKRouteListener.ROUTE_SUCCESS)
+            return;
+
+        SKRouteManager.getInstance().setCurrentRouteByUniqueId(id);
+
+        List<SKCoordinate> routePoints = SKRouteManager.getInstance().getRoutePointsForRoute(id);
+
+        System.err.printf("The route has %d points\n",routePoints.size());
+
+        for(int i=0; i<routePoints.size(); i++)
+        {
+            SKCoordinate location = routePoints.get(i);
+
+            System.err.printf("lat: %f, long: %f\n",
+                    location.getLatitude(),
+                    location.getLongitude());
+        }
+    }
+
+
     @Override
     public void onReceivedPOIs(SKTrackablePOIType type, List<SKDetectedPOI> detectedPois) {
         updateMapWithLatestDetectedPOIs(detectedPois);
@@ -855,7 +957,7 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
     /**
      * Updates the map when trackable POIs are detected such that only the
      * currently detected POIs are rendered on the map
-     * @param detectedPoiIds
+     * @param detectedPois
      */
     private void updateMapWithLatestDetectedPOIs(List<SKDetectedPOI> detectedPois) {
         List<Integer> detectedIdsList = new ArrayList<Integer>();
@@ -1038,32 +1140,13 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
         
     }
 
-    private int annotationId = 0;
-    private SKCoordinate[] routeEndpoints = new SKCoordinate[2];
+
 
     @Override
     public void onSingleTap(SKScreenPoint point) {
         //selectedAnnotation = null;
         //mapPopup.setVisibility(View.GONE);
 
-        double[] mercator = mapView.screenToMercator(point);
-
-        double[] latlng = mapView.mercatorToGps(mercator[0], mercator[1]);
-
-        SKAnnotation annotation = new SKAnnotation();
-        SKCoordinate coordinate = new SKCoordinate(
-                latlng[0], latlng[1]);
-
-        routeEndpoints[annotationId] = coordinate;
-
-        annotation.setLocation(coordinate);
-        SKAnnotationText annTxt = new SKAnnotationText();
-        annTxt.setText(annotationId == 0 ? "Start": "Finish");
-        annotation.setText(annTxt);
-        annotation.setUniqueID(annotationId);
-        annotationId++;
-        annotationId%=2;
-        mapView.addAnnotation(annotation);
     }
     
     

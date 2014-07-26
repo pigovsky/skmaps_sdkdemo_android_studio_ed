@@ -51,5 +51,10 @@
     <string name="route_calculation_failed">Route calculation failed</string>
     <string name="show_heat_map">SHOW HEAT MAP FOR\nTHE SELECTED CATEGORIES</string>
     <string name="put_api_key_here">Put API key here</string>
+    <string name="title_activity_search_address">SearchAddressActivity</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="typeAddress">Type address to be searched</string>
+    <string name="searchByAddress">Search by address</string>
 
 </resources>

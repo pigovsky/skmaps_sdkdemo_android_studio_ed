@@ -24,7 +24,7 @@ public class ReverseGeocodingActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_reverse_geocoding);
-        application = (DemoApplication) getApplication();
+        application = DemoApplication.getInstance();
     }
     
     public void onClick(View v) {

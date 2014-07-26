@@ -62,7 +62,7 @@ public class SplashActivity extends Activity implements SKPrepareMapTextureListe
         } else {
             mapResourcesDirPath = getFilesDir() + "/" + "SKMaps/";
         }
-        ((DemoApplication) getApplication()).setMapResourcesDirPath(mapResourcesDirPath);
+        DemoApplication.getInstance().setMapResourcesDirPath(mapResourcesDirPath);
 
         
         if (!new File(mapResourcesDirPath).exists()) {
@@ -128,7 +128,7 @@ public class SplashActivity extends Activity implements SKPrepareMapTextureListe
      * Copies the map creator file from assets to a storage.
      */
     private void prepareMapCreatorFile() {
-        final DemoApplication app = (DemoApplication) getApplication();
+        final DemoApplication app = DemoApplication.getInstance();
         final Thread prepareGPXFileThread = new Thread(new Runnable() {
             
             @Override
@@ -157,7 +157,7 @@ public class SplashActivity extends Activity implements SKPrepareMapTextureListe
      * Initializes the SKMaps framework
      */
     private void initializeLibrary() {
-        final DemoApplication app = (DemoApplication) getApplication();
+        final DemoApplication app = DemoApplication.getInstance();
         // get object holding map initialization settings
         SKMapsInitSettings initMapSettings = new SKMapsInitSettings();
         // set path to map resources and initial map style

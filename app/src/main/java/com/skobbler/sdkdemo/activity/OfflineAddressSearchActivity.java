@@ -1,10 +1,6 @@
 package com.skobbler.sdkdemo.activity;
 
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
@@ -15,7 +11,7 @@ import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
+
 import com.skobbler.ngx.SKCoordinate;
 import com.skobbler.ngx.packages.SKPackage;
 import com.skobbler.ngx.packages.SKPackageManager;
@@ -25,6 +21,11 @@ import com.skobbler.ngx.search.SKSearchManager;
 import com.skobbler.ngx.search.SKSearchManager.SKListLevel;
 import com.skobbler.ngx.search.SKSearchResult;
 import com.skobbler.sdkdemo.R;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -76,10 +77,11 @@ public class OfflineAddressSearchActivity extends Activity implements SKSearchLi
         
         packages = Arrays.asList(SKPackageManager.getInstance().getInstalledPackages());
         searchManager = new SKSearchManager(this);
-        
+
+        /*
         if (packages.isEmpty()) {
             Toast.makeText(this, "No offline map packages are available", Toast.LENGTH_SHORT).show();
-        }
+        }*/
         
         initializeList();
     }

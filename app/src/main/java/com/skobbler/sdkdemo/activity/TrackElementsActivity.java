@@ -1,10 +1,6 @@
 package com.skobbler.sdkdemo.activity;
 
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
@@ -16,12 +12,18 @@ import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+
 import com.skobbler.ngx.tracks.SKTrackElement;
 import com.skobbler.ngx.tracks.SKTrackElementType;
 import com.skobbler.ngx.tracks.SKTracksFile;
 import com.skobbler.ngx.tracks.SKTracksPoint;
 import com.skobbler.sdkdemo.R;
 import com.skobbler.sdkdemo.application.DemoApplication;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 public class TrackElementsActivity extends Activity {
@@ -48,7 +50,7 @@ public class TrackElementsActivity extends Activity {
         findViewById(R.id.label_operation_in_progress).setVisibility(View.GONE);
         listView = (ListView) findViewById(R.id.list_view);
         listView.setVisibility(View.VISIBLE);
-        app = (DemoApplication) getApplication();
+        app = DemoApplication.getInstance();
         if (loadedFile == null) {
             loadedFile = SKTracksFile.loadAtPath(app.getMapResourcesDirPath() + "GPXTracks/foxboro.gpx");
         }

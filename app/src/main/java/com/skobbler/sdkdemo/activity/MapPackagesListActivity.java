@@ -1,9 +1,6 @@
 package com.skobbler.sdkdemo.activity;
 
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -16,11 +13,16 @@ import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+
 import com.skobbler.ngx.packages.SKPackageManager;
 import com.skobbler.sdkdemo.R;
 import com.skobbler.sdkdemo.application.DemoApplication;
 import com.skobbler.sdkdemo.model.DownloadPackage;
 import com.skobbler.sdkdemo.util.MapDataParser;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 
 /**
@@ -46,7 +48,7 @@ public class MapPackagesListActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list);
         listView = (ListView) findViewById(R.id.list_view);
-        application = (DemoApplication) getApplication();
+        application = DemoApplication.getInstance();
         
         if (application.getPackageMap() != null) {
             // map packages are already available

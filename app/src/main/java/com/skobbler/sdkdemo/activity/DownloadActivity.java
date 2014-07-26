@@ -1,16 +1,6 @@
 package com.skobbler.sdkdemo.activity;
 
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.RandomAccessFile;
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
@@ -18,10 +8,23 @@ import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import com.skobbler.ngx.packages.SKPackageManager;
 import com.skobbler.sdkdemo.R;
 import com.skobbler.sdkdemo.application.DemoApplication;
 import com.skobbler.sdkdemo.model.DownloadPackage;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.RandomAccessFile;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -68,7 +71,7 @@ public class DownloadActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        application = (DemoApplication) getApplication();
+        application = DemoApplication.getInstance();
         setContentView(R.layout.activity_download);
         packagesPath = application.getMapResourcesDirPath() + "/Maps/downloads/";
         progressBar = (ProgressBar) findViewById(R.id.download_progress_bar);

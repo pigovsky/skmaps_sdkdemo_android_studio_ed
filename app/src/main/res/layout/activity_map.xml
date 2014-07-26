@@ -71,4 +71,46 @@
         android:layout_marginRight="10dp"
         android:text="@string/label_heading" />
 
+    <ToggleButton
+        android:id="@+id/buttonMarkRouteStart"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:textOff="S"
+        android:textOn="S"
+        />
+    <ToggleButton
+        android:id="@+id/buttonMarkRouteFinish"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/buttonMarkRouteStart"
+        android:textOff="F"
+        android:textOn="F"
+        />
+
+    <Button
+        android:id="@+id/buttonSearchByAddressActivity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/searchByAddress"
+        android:layout_toRightOf="@id/buttonMarkRouteFinish"/>
+
+    <Button
+        android:id="@+id/buttonZoomOut"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:text="-"
+        />
+    <Button
+        android:id="@+id/buttonZoomIn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_below="@id/buttonZoomOut"
+        android:text="+"
+        />
+
 </RelativeLayout>
