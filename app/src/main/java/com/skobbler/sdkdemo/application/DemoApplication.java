@@ -1,16 +1,21 @@
 package com.skobbler.sdkdemo.application;
 
 
+import android.util.Log;
+
 import com.skobbler.ngx.SKCoordinate;
 import com.skobbler.ngx.map.SKAnnotation;
 import com.skobbler.ngx.map.SKAnnotationText;
 import com.skobbler.ngx.map.SKMapSurfaceView;
 import com.skobbler.ngx.map.SKScreenPoint;
 import com.skobbler.ngx.positioner.SKPosition;
+import com.skobbler.ngx.routing.SKExtendedRoutePosition;
 import com.skobbler.ngx.routing.SKRouteManager;
 import com.skobbler.ngx.routing.SKRouteSettings;
+import com.skobbler.ngx.util.SKComputingDistance;
 import com.skobbler.sdkdemo.model.DownloadPackage;
 
+import java.util.List;
 import java.util.Map;
 
 
@@ -19,12 +24,22 @@ import java.util.Map;
  */
 public class DemoApplication {
 
-    private SKPosition currentPosition;
+    private static final String TAG = DemoApplication.class.getSimpleName();
+    private SKPosition currentPosition = new SKPosition(50.441782d,30.488273d);
+
+    private double distanceToPutMark;
 
     private DemoApplication()
     {
         setRouteEndpointId(-1);
-        setRouteEndpoints(new SKCoordinate[2]);
+        setRouteEndpoints(new SKCoordinate[]
+                        {
+                                new SKCoordinate( 30.488273, 50.441782),
+                                new SKCoordinate( 30.8939274, 50.33822199999999)
+                        }
+        );
+
+        distanceToPutMark = 1000d;
     }
 
     private static DemoApplication _instance;
@@ -49,10 +64,18 @@ public class DemoApplication {
 
         double[] latlng = mapView.mercatorToGps(mercator[0], mercator[1]);
 
-        SKAnnotation annotation = new SKAnnotation();
+
         SKCoordinate coordinate = new SKCoordinate(
                 latlng[0], latlng[1]);
 
+        addRouteEndPoint(coordinate);
+
+        /*if (getRouteEndpointId()==1)
+            launchRouteCalculation();*/
+    }
+
+    public void addRouteEndPoint(SKCoordinate coordinate) {
+        SKAnnotation annotation = new SKAnnotation();
         getRouteEndpoints()[getRouteEndpointId()] = coordinate;
 
         annotation.setLocation(coordinate);
@@ -61,6 +84,16 @@ public class DemoApplication {
         annotation.setText(annTxt);
         annotation.setUniqueID(getRouteEndpointId());
         mapView.addAnnotation(annotation);
+    }
+
+    public void addRouteEndPointAnnotations()
+    {
+        getMapView().deleteAllAnnotationsAndCustomPOIs();
+        for(int i=0; i<routeEndpoints.length; i++) {
+            setRouteEndpointId(i);
+            addRouteEndPoint(routeEndpoints[i]);
+        }
+        setRouteEndpointId(-1);
     }
 
     /**
@@ -89,6 +122,8 @@ public class DemoApplication {
     public void launchRouteCalculation() {
         // get a route object and populate it with the desired properties
         SKRouteSettings route = new SKRouteSettings();
+        route.setExtendedPointsReturned(true);
+
         // set start and destination points
         route.setStartCoordinate(getRouteEndpoints()[0]);
         route.setDestinationCoordinate(getRouteEndpoints()[1]);
@@ -101,6 +136,60 @@ public class DemoApplication {
 
         // pass the route to the calculation routine
         SKRouteManager.getInstance().calculateRoute(route);
+    }
+
+    public void setMarksOnRegularDistances(List<SKExtendedRoutePosition> routePoints)
+    {
+        addRouteEndPointAnnotations();
+        Log.d(TAG, "test routePoints");
+        if (routePoints == null) {
+            Log.d(TAG, "routePoints is null");
+            return;
+        }
+
+        double lastMarkWasAt = 0d;
+
+        SKExtendedRoutePosition previousPoint = routePoints.get(0);
+        SKExtendedRoutePosition currentPoint;
+
+        double routeLength = 0d;
+        int annotationId = 2;
+        for(int i=1; i<routePoints.size(); i++, previousPoint=currentPoint)
+        {
+            currentPoint = routePoints.get(i);
+
+            routeLength += SKComputingDistance.distanceBetween(
+                    previousPoint.getLongitude(),previousPoint.getLatitude(),
+                    currentPoint.getLongitude(),currentPoint.getLatitude()
+            );
+
+            if (routeLength-lastMarkWasAt<distanceToPutMark) {
+                continue;
+            }
+
+            lastMarkWasAt = routeLength;
+
+            SKAnnotation annotation = new SKAnnotation();
+            // The image should be a power of 2. _( 32x32, 64x64, etc)
+            annotation.setImagePath(getMapResourcesDirPath()+".Common/logo.png");
+
+            annotation.setImageSize(10);
+            annotation.setLocation(new SKCoordinate(currentPoint.getLongitude(), currentPoint.getLatitude()));
+            SKAnnotationText annTxt = new SKAnnotationText();
+            String annString = String.format("%3.1f", lastMarkWasAt*1e-3);
+            annTxt.setText(annString);
+            String msg = String.format("The route at %.1f meters has a point with latitude %f and longitude %f",
+                    routeLength,
+                    currentPoint.getLatitude(),
+                    currentPoint.getLongitude()
+            );
+            Log.d(TAG, msg);
+            //System.out.println(msg);
+            //System.err.println(msg);
+            annotation.setText(annTxt);
+            annotation.setUniqueID(annotationId++);
+            mapView.addAnnotation(annotation);
+        }
     }
 
 

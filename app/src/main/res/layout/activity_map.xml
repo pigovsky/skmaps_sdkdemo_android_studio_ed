@@ -54,8 +54,10 @@
     <Button
         android:id="@+id/bottom_button"
         style="@style/button_style"
-        android:text="@string/navigate"
+        android:text="@string/calculate_route"
         android:visibility="gone" />
+
+
 
     <Button
         android:id="@+id/position_me_button"
@@ -63,6 +65,16 @@
         android:layout_alignParentLeft="true"
         android:layout_marginLeft="10dp"
         android:text="@string/label_position_me" />
+
+    <Button
+        android:id="@+id/buttonCalculateRoute"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/calculate_route"
+        android:textSize="10dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        />
 
     <Button
         android:id="@+id/heading_button"

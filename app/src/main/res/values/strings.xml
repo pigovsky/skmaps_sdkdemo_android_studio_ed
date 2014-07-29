@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">AndroidOpenSourceDemo</string>
+    <string name="app_name">Skmaps test project by Pigovsky</string>
+    <string name="API_KEY">107d6d26f54ef6f14dd8b48c74c0e6bf93268ff228f5aa84495d9cc9c52962d9</string>
     <string name="options_group_map">Map</string>
     <string name="option_map_display">Map Display</string>
     <string name="option_map_styles">Map Styles</string>

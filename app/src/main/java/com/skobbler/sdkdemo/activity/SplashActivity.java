@@ -3,11 +3,9 @@ package com.skobbler.sdkdemo.activity;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.Toast;
 
 import com.skobbler.ngx.SKMaps;
@@ -34,15 +32,13 @@ import java.io.IOException;
  */
 public class SplashActivity extends Activity implements SKPrepareMapTextureListener, SKMapUpdateListener, View.OnClickListener {
 
-    public static final String APIKEY = "APIKEY";
 
-    private String API_KEY_VALUE;
-
+    private static final String TAG = SplashActivity.class.getSimpleName();
     /**
      * Path to the MapResources directory
      */
     private String mapResourcesDirPath = "";
-    private EditText editTextApiKey;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,8 +46,6 @@ public class SplashActivity extends Activity implements SKPrepareMapTextureListe
         setContentView(R.layout.activity_splash);
 
         findViewById(R.id.button_start).setOnClickListener(this);
-
-        editTextApiKey = (EditText)findViewById(R.id.edittext_apikey);
         
         SKLogging.enableLogs(true);
         File externalDir = getExternalFilesDir(null);
@@ -65,27 +59,21 @@ public class SplashActivity extends Activity implements SKPrepareMapTextureListe
         DemoApplication.getInstance().setMapResourcesDirPath(mapResourcesDirPath);
 
         
-        if (!new File(mapResourcesDirPath).exists()) {
+        //if (!new File(mapResourcesDirPath).exists()) {
             // if map resources are not already present copy them to
             // mapResourcesDirPath in the following thread
             new SKPrepareMapTextureThread(this, mapResourcesDirPath, "SKMaps.zip", this).start();
             // copy some other resource needed
             copyOtherResources();
             prepareMapCreatorFile();
-        } else {
+        /*} else {
             // map resources have already been copied - start the map activity
             Toast.makeText(SplashActivity.this, "Map resources copied in a previous run", Toast.LENGTH_SHORT).show();
             prepareMapCreatorFile();
-        }
+        }*/
 
-        prefs = getSharedPreferences("myDataStorage",
-                MODE_PRIVATE);
 
-        API_KEY_VALUE = prefs.getString(APIKEY, "PUT_YOUR_API_KEY_HERE");
-        editTextApiKey.setText(API_KEY_VALUE);
     }
-
-    private SharedPreferences prefs;
 
     @Override
     public void onMapTexturesPrepared(boolean prepared) {
@@ -114,13 +102,15 @@ public class SplashActivity extends Activity implements SKPrepareMapTextureListe
                     String tracksPath = mapResourcesDirPath + "GPXTracks";
                     File tracksDir = new File(tracksPath);
                     if (!tracksDir.exists()) {
-                        tracksDir.mkdirs();
+                        boolean mkdirsOk = tracksDir.mkdirs();
+                        if (!mkdirsOk)
+                            Log.d(TAG, "Error making dirs");
                     }
                     DemoUtils.copyAssetsToFolder(getAssets(), "GPXTracks", mapResourcesDirPath + "GPXTracks");
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            };
+            }
         }.start();
     }
     
@@ -140,7 +130,9 @@ public class SplashActivity extends Activity implements SKPrepareMapTextureListe
                     final File mapCreatorFolder = new File(mapCreatorFolderPath);
                     // create the folder where you want to copy the json file
                     if (!mapCreatorFolder.exists()) {
-                        mapCreatorFolder.mkdirs();
+                        boolean mkdirsOk = mapCreatorFolder.mkdirs();
+                        if (!mkdirsOk)
+                            Log.d(TAG, "Error creating mapCreator folder");
                     }
                     app.setMapCreatorFilePath(mapCreatorFolderPath + "/mapcreatorFile.json");
                     DemoUtils.copyAsset(getAssets(), "MapCreator", mapCreatorFolderPath, "mapcreatorFile.json");
@@ -181,7 +173,7 @@ public class SplashActivity extends Activity implements SKPrepareMapTextureListe
         // initMapSettings.setMapDetailLevel(SKMapsInitSettings.SK_MAP_DETAIL_LIGHT);
          // initialize map using the settings object
         SKVersioningManager.getInstance().setMapUpdateListener(this);
-        SKMaps.getInstance().initializeSKMaps(this, initMapSettings, API_KEY_VALUE);
+        SKMaps.getInstance().initializeSKMaps(this, initMapSettings, getString(R.string.API_KEY));
     }
 
     @Override
@@ -210,17 +202,6 @@ public class SplashActivity extends Activity implements SKPrepareMapTextureListe
 
     @Override
     public void onClick(View view) {
-
-        SharedPreferences.Editor mEditor = prefs.edit();
-
-        API_KEY_VALUE = String.valueOf(editTextApiKey.getText());
-
-        if (API_KEY_VALUE.isEmpty())
-            return;
-
-        mEditor.putString(APIKEY, API_KEY_VALUE);
-        mEditor.commit();
-
         initializeLibrary();
         finish();
         startActivity(new Intent(this, MapActivity.class));

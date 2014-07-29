@@ -50,6 +50,7 @@ import com.skobbler.ngx.poitracker.SKTrackablePOIType;
 import com.skobbler.ngx.positioner.SKCurrentPositionListener;
 import com.skobbler.ngx.positioner.SKCurrentPositionProvider;
 import com.skobbler.ngx.positioner.SKPosition;
+import com.skobbler.ngx.routing.SKExtendedRoutePosition;
 import com.skobbler.ngx.routing.SKRouteListener;
 import com.skobbler.ngx.routing.SKRouteManager;
 import com.skobbler.ngx.routing.SKRouteSettings;
@@ -104,7 +105,7 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
     /**
      * Current option selected
      */
-    private MapOption currentMapOption = MapOption.MAP_DISPLAY;
+    private MapOption currentMapOption = MapOption.ROUTING_AND_NAVIGATION;
     
     /**
      * Application context object
@@ -210,9 +211,16 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
         
         currentPositionProvider = new SKCurrentPositionProvider(this);
         currentPositionProvider.setCurrentPositionListener(this);
-        
-        if (DemoUtils.hasGpsModule(this)) {
-            currentPositionProvider.requestLocationUpdates(true, true, true);
+
+        try {
+            if (DemoUtils.hasGpsModule(this)) {
+                currentPositionProvider.requestLocationUpdates(true, true, true);
+            }
+        }
+        catch (Exception e)
+        {
+            Log.d(TAG, e.getMessage());
+            e.printStackTrace();
         }
         
         SKMapViewHolder mapViewGroup = (SKMapViewHolder) findViewById(R.id.view_group_map);
@@ -247,7 +255,8 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
                 R.id.buttonMarkRouteFinish,
                 R.id.buttonZoomIn,
                 R.id.buttonZoomOut,
-                R.id.buttonSearchByAddressActivity
+                R.id.buttonSearchByAddressActivity,
+                R.id.buttonCalculateRoute
         })
             findViewById(id).setOnClickListener(this);
 
@@ -306,11 +315,13 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
         if (headingOn) {
             startOrientationSensor();
         }
+        app.goTo();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
+        app.goTo();
     }
 
     @Override
@@ -336,8 +347,9 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
             
             @Override
             public void run() {
-                View chessBackground = findViewById(R.id.chess_board_background);
-                chessBackground.setVisibility(View.GONE);
+                findViewById(R.id.chess_board_background)
+                        .setVisibility(View.GONE);
+                app.addRouteEndPointAnnotations();
                 app.goTo();
             }
         });
@@ -361,14 +373,12 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_MENU) {
-            if (keyCode == KeyEvent.KEYCODE_MENU) {
-                if (menu.getVisibility() == View.VISIBLE) {
-                    menu.setVisibility(View.GONE);
-                } else if (menu.getVisibility() == View.GONE) {
-                    clearMap();
-                    menu.setVisibility(View.VISIBLE);
-                    menu.bringToFront();
-                }
+            if (menu.getVisibility() == View.VISIBLE) {
+                menu.setVisibility(View.GONE);
+            } else if (menu.getVisibility() == View.GONE) {
+                clearMap();
+                menu.setVisibility(View.VISIBLE);
+                menu.bringToFront();
             }
             return true;
         } else if (keyCode == KeyEvent.KEYCODE_BACK && menu.getVisibility() == View.VISIBLE) {
@@ -421,6 +431,9 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
                 break;
             case R.id.map_style_grayscale:
                 selectMapStyle(new SKMapViewStyle(app.getMapResourcesDirPath() + "grayscalestyle/", "grayscalestyle.json"));
+                break;
+            case R.id.buttonCalculateRoute:
+                app.launchRouteCalculation();
                 break;
             case R.id.bottom_button:
                 if (currentMapOption == MapOption.ROUTING_AND_NAVIGATION) {
@@ -834,8 +847,6 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
         
     }
 
-
-    /*
     @Override
     public void onRouteCalculationCompleted(final int statusMessage, final int routeDistance, final int routeEta,
             final boolean thisRouteIsComplete, final int id) {
@@ -865,89 +876,41 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
                     }
                 }
             });
-        } else if (currentMapOption == MapOption.ROUTING_AND_NAVIGATION || currentMapOption == MapOption.POI_TRACKING) {
-            // select the current route (on which navigation will run)
-            SKRouteManager.getInstance().setCurrentRouteByUniqueId(id);
-            // zoom to the current route
-            SKRouteManager.getInstance().zoomToRoute(1, 1, 8, 8, 8, 8);
+        } else {
+            if (currentMapOption == MapOption.ROUTING_AND_NAVIGATION || currentMapOption == MapOption.POI_TRACKING) {
+                // select the current route (on which navigation will run)
+                SKRouteManager.getInstance().setCurrentRouteByUniqueId(id);
+                // zoom to the current route
+                SKRouteManager.getInstance().zoomToRoute(1, 1, 8, 8, 8, 8);
 
-            List<SKCoordinate> routePoints = SKRouteManager.getInstance().getRoutePointsForRoute(id);
-            setMarksOnRegularDistances(routePoints);
+                List<SKExtendedRoutePosition> routePoints = SKRouteManager.getInstance().getExtendedRoutePointsForRoute(id);
+                Log.d(TAG, "try to set mark points");
+                System.err.println("Pigovsky message");
+                app.setMarksOnRegularDistances(routePoints);
 
 
-            if (currentMapOption == MapOption.ROUTING_AND_NAVIGATION) {
-                runOnUiThread(new Runnable() {
-                    
-                    @Override
-                    public void run() {
-                        bottomButton.setText(getResources().getString(R.string.start_navigation));
-                    }
-                });
-            } else if (currentMapOption == MapOption.POI_TRACKING) {
-                // start the POI tracker
-                poiTrackingManager.startPOITrackerWithRadius(10000, 0.5);
-                // set warning rules for trackable POIs
-                poiTrackingManager.addWarningRulesforPoiType(SKTrackablePOIType.SPEEDCAM);
-                // launch navigation
+                if (currentMapOption == MapOption.ROUTING_AND_NAVIGATION) {
+                    runOnUiThread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            bottomButton.setText(getResources().getString(R.string.start_navigation));
+                        }
+                    });
+                } else if (currentMapOption == MapOption.POI_TRACKING) {
+                    // start the POI tracker
+                    poiTrackingManager.startPOITrackerWithRadius(10000, 0.5);
+                    // set warning rules for trackable POIs
+                    poiTrackingManager.addWarningRulesforPoiType(SKTrackablePOIType.SPEEDCAM);
+                    // launch navigation
+                    launchNavigation();
+                }
+            } else if (currentMapOption == MapOption.TRACKS) {
+                // launch navigation on route obtained from GPX track
                 launchNavigation();
             }
-        } else if (currentMapOption == MapOption.TRACKS) {
-            // launch navigation on route obtained from GPX track
-            launchNavigation();
         }
     }
-
-
-    private void setMarksOnRegularDistances(List<SKCoordinate> routePoints) {
-        if (routePoints == null)
-            return;
-
-        int annotationId = 2;
-
-        System.err.println("The route has "+routePoints.size()+" points");
-        for(int i=1; i<routePoints.size(); i+=10)
-        {
-            SKAnnotation annotation = new SKAnnotation();
-
-            SKCoordinate location = routePoints.get(i);
-            annotation.setLocation(new SKCoordinate(location.getLongitude(),location.getLatitude()));
-            SKAnnotationText annTxt = new SKAnnotationText();
-            String annString = String.format("%3d", i);
-            annTxt.setText(annString);
-            System.err.printf("Add annotation %s, lat: %f, long: %f\n",
-                    annString,
-                    location.getLatitude(),
-                    location.getLongitude()
-                    );
-            annotation.setText(annTxt);
-            annotation.setUniqueID(annotationId++);
-            mapView.addAnnotation(annotation);
-        }
-    }
-    */
-
-    @Override
-    public void onRouteCalculationCompleted(final int statusMessage, final int routeDistance, final int routeEta, final boolean thisRouteIsComplete, final int id)
-    {
-        if (statusMessage != SKRouteListener.ROUTE_SUCCESS)
-            return;
-
-        SKRouteManager.getInstance().setCurrentRouteByUniqueId(id);
-
-        List<SKCoordinate> routePoints = SKRouteManager.getInstance().getRoutePointsForRoute(id);
-
-        System.err.printf("The route has %d points\n",routePoints.size());
-
-        for(int i=0; i<routePoints.size(); i++)
-        {
-            SKCoordinate location = routePoints.get(i);
-
-            System.err.printf("lat: %f, long: %f\n",
-                    location.getLatitude(),
-                    location.getLongitude());
-        }
-    }
-
 
     @Override
     public void onReceivedPOIs(SKTrackablePOIType type, List<SKDetectedPOI> detectedPois) {
