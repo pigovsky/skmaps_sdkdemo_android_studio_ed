@@ -147,41 +147,41 @@ public class DemoApplication {
             return;
         }
 
-        double lastMarkWasAt = 0d;
 
-        SKExtendedRoutePosition previousPoint = routePoints.get(0);
-        SKExtendedRoutePosition currentPoint;
-
-        double routeLength = 0d;
         int annotationId = 2;
-        for(int i=1; i<routePoints.size(); i++, previousPoint=currentPoint)
-        {
-            currentPoint = routePoints.get(i);
 
-            routeLength += SKComputingDistance.distanceBetween(
-                    previousPoint.getLongitude(),previousPoint.getLatitude(),
-                    currentPoint.getLongitude(),currentPoint.getLatitude()
-            );
+        double[] distanceToPoints = computeDistanceToPoints(routePoints);
 
-            if (routeLength-lastMarkWasAt<distanceToPutMark) {
-                continue;
+        int k=1;
+        double previousToCurrent = distanceToPoints[k];
+
+        for(int i=0; i<(int)Math.floor(distanceToPoints[distanceToPoints.length-1]/distanceToPutMark); ++i){
+            double markPosition = i * distanceToPutMark;
+            while (distanceToPoints[k]< markPosition) {
+                k++;
+                previousToCurrent =distanceToPoints[k] - distanceToPoints[k-1];
             }
+            double previousToMark = markPosition - distanceToPoints[k-1];
+            double alpha = previousToMark/previousToCurrent;
 
-            lastMarkWasAt = routeLength;
+            SKCoordinate markLocation = new SKCoordinate(
+                    routePoints.get(k-1).getLongitude() *(1d-alpha) + routePoints.get(k).getLongitude() * alpha,
+                    routePoints.get(k-1).getLatitude() *(1d-alpha) + routePoints.get(k).getLatitude() * alpha
+                    );
 
             SKAnnotation annotation = new SKAnnotation();
             // The image should be a power of 2. _( 32x32, 64x64, etc)
             annotation.setImagePath(getMapResourcesDirPath()+".Common/logo.png");
 
             annotation.setImageSize(10);
-            annotation.setLocation(new SKCoordinate(currentPoint.getLongitude(), currentPoint.getLatitude()));
+            annotation.setLocation(markLocation);
             SKAnnotationText annTxt = new SKAnnotationText();
-            String annString = String.format("%3.1f", lastMarkWasAt*1e-3);
+            String annString = String.format("%d", i);
             annTxt.setText(annString);
-            String msg = String.format("The route at %.1f meters has a point with latitude %f and longitude %f",
-                    routeLength,
-                    currentPoint.getLatitude(),
-                    currentPoint.getLongitude()
+            String msg = String.format("The route at %d km has a point with latitude %f and longitude %f",
+                    i,
+                    markLocation.getLatitude(),
+                    markLocation.getLongitude()
             );
             Log.d(TAG, msg);
             //System.out.println(msg);
@@ -189,7 +189,30 @@ public class DemoApplication {
             annotation.setText(annTxt);
             annotation.setUniqueID(annotationId++);
             mapView.addAnnotation(annotation);
+
         }
+    }
+
+    static public double[] computeDistanceToPoints(List<SKExtendedRoutePosition> routePoints) {
+        SKExtendedRoutePosition previousPoint = routePoints.get(0);
+        SKExtendedRoutePosition currentPoint;
+
+
+        double routeLength = 0d;
+        double[] distanceToPoints = new double[routePoints.size()];
+
+        for(int i=1; i<routePoints.size(); i++, previousPoint=currentPoint) {
+            currentPoint = routePoints.get(i);
+
+            double distanceFromPreviousToCurrent = SKComputingDistance.distanceBetween(
+                    previousPoint.getLongitude(), previousPoint.getLatitude(),
+                    currentPoint.getLongitude(), currentPoint.getLatitude()
+            );
+
+            routeLength += distanceFromPreviousToCurrent;
+            distanceToPoints[i]=routeLength;
+        }
+        return distanceToPoints;
     }
 
 
