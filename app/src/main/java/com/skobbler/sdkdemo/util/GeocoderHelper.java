@@ -68,8 +68,6 @@ public class GeocoderHelper
 
             JSONObject locationJSON = result.getJSONObject("geometry").getJSONObject("location");
 
-            System.err.println(locationJSON);
-
             SKCoordinate location = new SKCoordinate();
             location.setLatitude(Double.parseDouble(locationJSON.getString("lat")));
             location.setLongitude(Double.parseDouble(locationJSON.getString("lng")));

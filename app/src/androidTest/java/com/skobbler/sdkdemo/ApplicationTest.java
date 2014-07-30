@@ -1,4 +1,4 @@
-package com.pigovsky.myapplication;
+package com.skobbler.sdkdemo;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

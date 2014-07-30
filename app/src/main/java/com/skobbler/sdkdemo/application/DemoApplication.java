@@ -1,6 +1,9 @@
 package com.skobbler.sdkdemo.application;
 
 
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import com.skobbler.ngx.SKCoordinate;
@@ -13,8 +16,11 @@ import com.skobbler.ngx.routing.SKExtendedRoutePosition;
 import com.skobbler.ngx.routing.SKRouteManager;
 import com.skobbler.ngx.routing.SKRouteSettings;
 import com.skobbler.ngx.util.SKComputingDistance;
+import com.skobbler.sdkdemo.R;
 import com.skobbler.sdkdemo.model.DownloadPackage;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +31,8 @@ import java.util.Map;
 public class DemoApplication {
 
     private static final String TAG = DemoApplication.class.getSimpleName();
+    public static final String MARK_PNG = ".Common/logo.png";
+    public static final int MARK_PNG_SIZE = 32;
     private SKPosition currentPosition = new SKPosition(50.441782d,30.488273d);
 
     private double distanceToPutMark;
@@ -40,6 +48,24 @@ public class DemoApplication {
         );
 
         distanceToPutMark = 1000d;
+    }
+
+    public void copyMarkImage(Context context){
+        File markImage = new File(mapResourcesDirPath + MARK_PNG);
+
+        if(! markImage.exists()){
+            Bitmap bm = BitmapFactory.decodeResource(context.getResources(), R.drawable.logo);
+            bm = Bitmap.createScaledBitmap(bm, MARK_PNG_SIZE, MARK_PNG_SIZE, false);
+            try {
+                FileOutputStream outStream = new FileOutputStream(markImage);
+                bm.compress(Bitmap.CompressFormat.PNG, 100, outStream);
+                outStream.flush();
+                outStream.close();
+            }catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
     }
 
     private static DemoApplication _instance;
@@ -69,9 +95,6 @@ public class DemoApplication {
                 latlng[0], latlng[1]);
 
         addRouteEndPoint(coordinate);
-
-        /*if (getRouteEndpointId()==1)
-            launchRouteCalculation();*/
     }
 
     public void addRouteEndPoint(SKCoordinate coordinate) {
@@ -171,7 +194,7 @@ public class DemoApplication {
 
             SKAnnotation annotation = new SKAnnotation();
             // The image should be a power of 2. _( 32x32, 64x64, etc)
-            annotation.setImagePath(getMapResourcesDirPath()+".Common/logo.png");
+            annotation.setImagePath(getMapResourcesDirPath()+ MARK_PNG);
 
             annotation.setImageSize(10);
             annotation.setLocation(markLocation);
@@ -184,8 +207,7 @@ public class DemoApplication {
                     markLocation.getLongitude()
             );
             Log.d(TAG, msg);
-            //System.out.println(msg);
-            //System.err.println(msg);
+
             annotation.setText(annTxt);
             annotation.setUniqueID(annotationId++);
             mapView.addAnnotation(annotation);
@@ -271,7 +293,7 @@ public class DemoApplication {
     {
         if (currentPosition == null || mapView == null)
             return;
-        System.err.println(currentPosition);
+
         mapView.reportNewGPSPosition(currentPosition);
         mapView.centerMapOnCurrentPositionSmooth(17, 500);
     }

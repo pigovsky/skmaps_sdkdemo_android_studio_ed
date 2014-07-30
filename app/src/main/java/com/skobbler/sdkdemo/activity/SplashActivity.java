@@ -5,7 +5,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.Toast;
 
 import com.skobbler.ngx.SKMaps;
@@ -23,6 +22,8 @@ import com.skobbler.sdkdemo.util.DemoUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -30,10 +31,11 @@ import java.io.IOException;
  * the device
  * 
  */
-public class SplashActivity extends Activity implements SKPrepareMapTextureListener, SKMapUpdateListener, View.OnClickListener {
+public class SplashActivity extends Activity implements SKPrepareMapTextureListener, SKMapUpdateListener {
 
 
     private static final String TAG = SplashActivity.class.getSimpleName();
+    public static final String SKMAPS_DIR = "/SKMaps/";
     /**
      * Path to the MapResources directory
      */
@@ -44,35 +46,44 @@ public class SplashActivity extends Activity implements SKPrepareMapTextureListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
-
-        findViewById(R.id.button_start).setOnClickListener(this);
         
         SKLogging.enableLogs(true);
         File externalDir = getExternalFilesDir(null);
         
         // determine path where map resources should be copied on the device
-        if (externalDir != null) {
-            mapResourcesDirPath = externalDir + "/" + "SKMaps/";
-        } else {
-            mapResourcesDirPath = getFilesDir() + "/" + "SKMaps/";
-        }
+        mapResourcesDirPath = (externalDir != null ? externalDir : getFilesDir() ) + SKMAPS_DIR;
+
         DemoApplication.getInstance().setMapResourcesDirPath(mapResourcesDirPath);
 
         
-        //if (!new File(mapResourcesDirPath).exists()) {
+        if (!new File(mapResourcesDirPath).exists()) {
             // if map resources are not already present copy them to
             // mapResourcesDirPath in the following thread
             new SKPrepareMapTextureThread(this, mapResourcesDirPath, "SKMaps.zip", this).start();
             // copy some other resource needed
             copyOtherResources();
             prepareMapCreatorFile();
-        /*} else {
+            DemoApplication.getInstance().copyMarkImage(this);
+        } else {
             // map resources have already been copied - start the map activity
             Toast.makeText(SplashActivity.this, "Map resources copied in a previous run", Toast.LENGTH_SHORT).show();
             prepareMapCreatorFile();
-        }*/
+            DemoApplication.getInstance().copyMarkImage(this);
+            initializeLibrary();
+            Executors.newScheduledThreadPool(1).schedule(new Runnable() {
+                @Override
+                public void run() {
+                    runOnUiThread(new Runnable() {
 
-
+                        @Override
+                        public void run() {
+                            finish();
+                            startActivity(new Intent(SplashActivity.this, MapActivity.class));
+                        }
+                    });
+                }
+            }, 1, TimeUnit.SECONDS);
+        }
     }
 
     @Override
@@ -198,12 +209,5 @@ public class SplashActivity extends Activity implements SKPrepareMapTextureListe
     public void onVersionFileDownloadTimeout() {
         // TODO Auto-generated method stub
         
-    }
-
-    @Override
-    public void onClick(View view) {
-        initializeLibrary();
-        finish();
-        startActivity(new Intent(this, MapActivity.class));
     }
 }

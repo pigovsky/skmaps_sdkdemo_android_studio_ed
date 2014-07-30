@@ -885,7 +885,7 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
 
                 List<SKExtendedRoutePosition> routePoints = SKRouteManager.getInstance().getExtendedRoutePointsForRoute(id);
                 Log.d(TAG, "try to set mark points");
-                System.err.println("Pigovsky message");
+
                 app.setMarksOnRegularDistances(routePoints);
 
 
