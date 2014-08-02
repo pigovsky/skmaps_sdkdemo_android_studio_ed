@@ -14,9 +14,9 @@ import com.skobbler.ngx.positioner.SKPosition;
 import com.skobbler.ngx.routing.SKExtendedRoutePosition;
 import com.skobbler.ngx.routing.SKRouteManager;
 import com.skobbler.ngx.routing.SKRouteSettings;
-import com.skobbler.ngx.util.SKComputingDistance;
 import com.skobbler.sdkdemo.R;
 import com.skobbler.sdkdemo.model.DownloadPackage;
+import com.skobbler.sdkdemo.util.RoutePointsHelper;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -31,6 +31,10 @@ import java.util.Map;
  * @version %I%, %G%
  */
 public class App {
+    /**
+     * Relative path (will be concatenated to some root) to hold SKMap resources on device
+     */
+    public static final String SKMAPS_DIR = "/SKMaps/";
 
     /**
      * File path of an image, which is used to mark regular distance amount on a route
@@ -41,7 +45,6 @@ public class App {
      * Size of the image, which is used to mark regular distance amount on a route in pixels
      */
     public static final int MARK_PNG_SIZE = 32;
-    public static final int MARK_DRAWING_SIZE = 10;
     /**
      * A TAG for debugger logging messages produced by methods of this class
      */
@@ -61,7 +64,7 @@ public class App {
     /**
      * Current endpoint, which user is about to specify on the map view
      */
-    private EndpointType currentRouteEndpointType = EndpointType.No;
+    private RoutePointsHelper.EndpointType currentRouteEndpointType = RoutePointsHelper.EndpointType.No;
 
 
     /**
@@ -101,7 +104,7 @@ public class App {
      * to put marks on the route.
      */
     private App() {
-        setCurrentRouteEndpointType(EndpointType.No);
+        setCurrentRouteEndpointType(RoutePointsHelper.EndpointType.No);
         routeStart = new SKCoordinate(30.488273, 50.441782);
         routeFinish = new SKCoordinate(30.8939274, 50.33822199999999);
 
@@ -119,36 +122,6 @@ public class App {
             instance = new App();
         }
         return instance;
-    }
-
-    /**
-     * Takes list of route points and measures distance from the route start to each point
-     * in this list.
-     *
-     * @param routePoints list of route points to compute distances from
-     * @return array of doubles, which contain distances from begin of the route to its every point
-     * @throws java.lang.NullPointerException if <code>routePoints</code> is null
-     */
-    static private double[] computeDistanceToPoints(List<SKExtendedRoutePosition> routePoints) {
-        SKExtendedRoutePosition previousPoint = routePoints.get(0);
-        SKExtendedRoutePosition currentPoint;
-
-
-        double routeLength = 0d;
-        double[] distanceToPoints = new double[routePoints.size()];
-
-        for (int i = 1; i < routePoints.size(); i++, previousPoint = currentPoint) {
-            currentPoint = routePoints.get(i);
-
-            double distanceFromPreviousToCurrent = SKComputingDistance.distanceBetween(
-                    previousPoint.getLongitude(), previousPoint.getLatitude(),
-                    currentPoint.getLongitude(), currentPoint.getLatitude()
-            );
-
-            routeLength += distanceFromPreviousToCurrent;
-            distanceToPoints[i] = routeLength;
-        }
-        return distanceToPoints;
     }
 
     /**
@@ -183,7 +156,7 @@ public class App {
      * @param point a screen point tapped in the map view
      */
     public void addRouteEndPoint(SKScreenPoint point) {
-        if (point == null || getCurrentRouteEndpointType() == EndpointType.No) {
+        if (point == null || getCurrentRouteEndpointType() == RoutePointsHelper.EndpointType.No) {
             return;
         }
 
@@ -208,13 +181,13 @@ public class App {
      * @param coordinate a gps coordinate to be added as an endpoint
      */
     public void addRouteEndPoint(SKCoordinate coordinate) {
-        if (coordinate == null || getCurrentRouteEndpointType() == EndpointType.No) {
+        if (coordinate == null || getCurrentRouteEndpointType() == RoutePointsHelper.EndpointType.No) {
             return;
         }
 
-        if (getCurrentRouteEndpointType() == EndpointType.Start) {
+        if (getCurrentRouteEndpointType() == RoutePointsHelper.EndpointType.Start) {
             routeStart = coordinate;
-        } else if (getCurrentRouteEndpointType() == EndpointType.Finish) {
+        } else if (getCurrentRouteEndpointType() == RoutePointsHelper.EndpointType.Finish) {
             routeFinish = coordinate;
         }
         drawEndpointAnnotation();
@@ -227,18 +200,18 @@ public class App {
      *
      * @param endpointType either Start or Finish. This method does nothing for 'No' value
      */
-    private void drawEndpointAnnotation(EndpointType endpointType) {
-        if (endpointType == EndpointType.No) {
+    private void drawEndpointAnnotation(RoutePointsHelper.EndpointType endpointType) {
+        if (endpointType == RoutePointsHelper.EndpointType.No) {
             return;
         }
 
         SKAnnotation annotation = new SKAnnotation();
         SKAnnotationText label = new SKAnnotationText();
-        if (routeStart != null && endpointType == EndpointType.Start) {
+        if (routeStart != null && endpointType == RoutePointsHelper.EndpointType.Start) {
             annotation.setUniqueID(0);
             label.setText(getString(R.string.start));
             annotation.setLocation(routeStart);
-        } else if (routeFinish != null && endpointType == EndpointType.Finish) {
+        } else if (routeFinish != null && endpointType == RoutePointsHelper.EndpointType.Finish) {
             annotation.setUniqueID(1);
             label.setText(getString(R.string.finish));
             annotation.setLocation(routeFinish);
@@ -285,8 +258,8 @@ public class App {
      */
     public void updateRouteEndPointAnnotations() {
         getMapView().deleteAllAnnotationsAndCustomPOIs();
-        drawEndpointAnnotation(EndpointType.Start);
-        drawEndpointAnnotation(EndpointType.Finish);
+        drawEndpointAnnotation(RoutePointsHelper.EndpointType.Start);
+        drawEndpointAnnotation(RoutePointsHelper.EndpointType.Finish);
     }
 
     /**
@@ -312,56 +285,6 @@ public class App {
         SKRouteManager.getInstance().calculateRoute(route);
     }
 
-    /**
-     * Puts annotations on even distances throughout route. The distance is
-     * specified in <code>getDistanceToPutMark()</code>.
-     *
-     * @param routePoints route described by a list of its gps points
-     */
-    public void setMarksOnRegularDistances(List<SKExtendedRoutePosition> routePoints) {
-        if (routePoints == null) {
-            return;
-        }
-
-        /* Route mark annotations indexes started from 2 as 0 and 1 are in use by start and finish
-        * annotations */
-        int annotationId = 2;
-        int k = 1;
-        double[] distanceToPoints = App.computeDistanceToPoints(routePoints);
-        double previousToCurrent = distanceToPoints[1];
-        updateRouteEndPointAnnotations();
-
-        for (int i = 1; i <= (int) Math.floor(distanceToPoints[distanceToPoints.length - 1] / getDistanceToPutMark()); ++i) {
-            double markPosition = i * getDistanceToPutMark();
-            while (distanceToPoints[k] < markPosition) {
-                k++;
-                previousToCurrent = distanceToPoints[k] - distanceToPoints[k - 1];
-            }
-            double previousToMark = markPosition - distanceToPoints[k - 1];
-            double alpha = previousToMark / previousToCurrent;
-
-            SKCoordinate markLocation = new SKCoordinate(
-                    routePoints.get(k - 1).getLongitude() * (1d - alpha) + routePoints.get(k).getLongitude() * alpha,
-                    routePoints.get(k - 1).getLatitude() * (1d - alpha) + routePoints.get(k).getLatitude() * alpha
-            );
-
-            SKAnnotation annotation = new SKAnnotation();
-            // The image should be a power of 2. _( 32x32, 64x64, etc)
-            annotation.setImagePath(getMapResourcesDirPath() + MARK_PNG);
-
-            annotation.setImageSize(MARK_DRAWING_SIZE);
-            annotation.setLocation(markLocation);
-            SKAnnotationText annTxt = new SKAnnotationText();
-            String annString = String.format("%d", i);
-            annTxt.setText(annString);
-
-            annotation.setText(annTxt);
-            annotation.setUniqueID(annotationId++);
-            mapView.addAnnotation(annotation);
-
-        }
-    }
-
     public Map<String, DownloadPackage> getPackageMap() {
         return packageMap;
     }
@@ -374,8 +297,11 @@ public class App {
         return mapResourcesDirPath;
     }
 
-    public void setMapResourcesDirPath(String mapResourcesDirPath) {
-        this.mapResourcesDirPath = mapResourcesDirPath;
+    public void setupMapResourcesDirPath(Context context) {
+        File externalDir = context.getExternalFilesDir(null);
+
+        // determine path where map resources should be copied on the device
+        mapResourcesDirPath = (externalDir != null ? externalDir : context.getFilesDir() ) + SKMAPS_DIR;
     }
 
     public SKMapSurfaceView getMapView() {
@@ -394,11 +320,11 @@ public class App {
         this.mapCreatorFilePath = mapCreatorFilePath;
     }
 
-    public EndpointType getCurrentRouteEndpointType() {
+    public RoutePointsHelper.EndpointType getCurrentRouteEndpointType() {
         return currentRouteEndpointType;
     }
 
-    public void setCurrentRouteEndpointType(EndpointType currentRouteEndpointType) {
+    public void setCurrentRouteEndpointType(RoutePointsHelper.EndpointType currentRouteEndpointType) {
         this.currentRouteEndpointType = currentRouteEndpointType;
     }
 
@@ -441,9 +367,11 @@ public class App {
         this.distanceToPutMark = distanceToPutMark;
     }
 
-    public static enum EndpointType {
-        No,
-        Start,
-        Finish
+    public void drawMarksOnRegularDistances(List<SKExtendedRoutePosition> routePoints) {
+        updateRouteEndPointAnnotations();
+        for (SKAnnotation annotation : RoutePointsHelper.calculateMarksOnRegularDistances(routePoints, getDistanceToPutMark(), getMapResourcesDirPath() + MARK_PNG)) {
+            getMapView().addAnnotation(annotation);
+        }
     }
+
 }

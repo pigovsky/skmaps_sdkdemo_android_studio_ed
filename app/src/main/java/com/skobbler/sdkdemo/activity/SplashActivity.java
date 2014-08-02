@@ -35,12 +35,8 @@ public class SplashActivity extends Activity implements SKPrepareMapTextureListe
 
 
     private static final String TAG = SplashActivity.class.getSimpleName();
-    public static final String SKMAPS_DIR = "/SKMaps/";
-    /**
-     * Path to the MapResources directory
-     */
-    private String mapResourcesDirPath = "";
 
+    private String mapResourcesDirPath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,14 +44,10 @@ public class SplashActivity extends Activity implements SKPrepareMapTextureListe
         setContentView(R.layout.activity_splash);
         
         SKLogging.enableLogs(true);
-        File externalDir = getExternalFilesDir(null);
-        
-        // determine path where map resources should be copied on the device
-        mapResourcesDirPath = (externalDir != null ? externalDir : getFilesDir() ) + SKMAPS_DIR;
+        App.getInstance().setupMapResourcesDirPath(this);
 
-        App.getInstance().setMapResourcesDirPath(mapResourcesDirPath);
+        mapResourcesDirPath = App.getInstance().getMapResourcesDirPath();
 
-        
         if (!new File(mapResourcesDirPath).exists()) {
             // if map resources are not already present copy them to
             // mapResourcesDirPath in the following thread

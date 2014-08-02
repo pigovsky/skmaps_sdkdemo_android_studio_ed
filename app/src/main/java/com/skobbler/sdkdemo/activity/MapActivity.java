@@ -61,6 +61,7 @@ import com.skobbler.sdkdemo.R;
 import com.skobbler.sdkdemo.application.App;
 import com.skobbler.sdkdemo.util.AdvicePlayer;
 import com.skobbler.sdkdemo.util.DemoUtils;
+import com.skobbler.sdkdemo.util.RoutePointsHelper;
 import com.skobbler.sdkdemo.view.CustomCalloutView;
 
 import java.util.ArrayList;
@@ -163,17 +164,18 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
     private boolean headingOn;
     private ToggleButton toggleButtonStart;
     private ToggleButton toggleButtonFinish;
+    private List<SKExtendedRoutePosition> routePointsForRoute;
 
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {
-        if (app.getCurrentRouteEndpointType() == App.EndpointType.No) {
+        if (app.getCurrentRouteEndpointType() == RoutePointsHelper.EndpointType.No) {
             return false;
         }
         app.addRouteEndPoint(new SKScreenPoint(motionEvent.getX(), motionEvent.getY()));
         for (ToggleButton v : toggleButtonMarkRoute) {
             v.setChecked(false);
         }
-        app.setCurrentRouteEndpointType(App.EndpointType.No);
+        app.setCurrentRouteEndpointType(RoutePointsHelper.EndpointType.No);
         return false;
     }
 
@@ -232,7 +234,8 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
                 R.id.buttonZoomIn,
                 R.id.buttonZoomOut,
                 R.id.buttonSearchByAddressActivity,
-                R.id.buttonCalculateRoute
+                R.id.buttonCalculateRoute,
+                R.id.buttonRefresh
         }) {
             findViewById(id).setOnClickListener(this);
         }
@@ -371,15 +374,15 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
 
         if (id == R.id.buttonMarkRouteStart ||
                 id == R.id.buttonMarkRouteFinish) {
-            app.setCurrentRouteEndpointType(App.EndpointType.No);
+            app.setCurrentRouteEndpointType(RoutePointsHelper.EndpointType.No);
             if (((ToggleButton) v).isChecked()) {
                 switch (id) {
                     case R.id.buttonMarkRouteStart:
-                        app.setCurrentRouteEndpointType(App.EndpointType.Start);
+                        app.setCurrentRouteEndpointType(RoutePointsHelper.EndpointType.Start);
                         toggleButtonFinish.setChecked(false);
                         break;
                     case R.id.buttonMarkRouteFinish:
-                        app.setCurrentRouteEndpointType(App.EndpointType.Finish);
+                        app.setCurrentRouteEndpointType(RoutePointsHelper.EndpointType.Finish);
                         toggleButtonStart.setChecked(false);
                         break;
                 }
@@ -387,6 +390,9 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
         }
 
         switch (id) {
+            case R.id.buttonRefresh:
+                app.drawMarksOnRegularDistances(routePointsForRoute);
+                break;
             case R.id.buttonSearchByAddressActivity:
                 startActivity(new Intent(this, SearchByAddressActivity.class));
                 break;
@@ -867,11 +873,8 @@ public class MapActivity extends Activity implements SKMapSurfaceListener, SKRou
                 // zoom to the current route
                 SKRouteManager.getInstance().zoomToRoute(1, 1, 8, 8, 8, 8);
 
-                List<SKExtendedRoutePosition> routePoints = SKRouteManager.getInstance().getExtendedRoutePointsForRoute(id);
-                Log.d(TAG, "try to set mark points");
-
-                app.setMarksOnRegularDistances(routePoints);
-
+                routePointsForRoute = SKRouteManager.getInstance().getExtendedRoutePointsForRoute(id);
+                app.drawMarksOnRegularDistances(routePointsForRoute);
 
                 if (currentMapOption == MapOption.ROUTING_AND_NAVIGATION) {
                     runOnUiThread(new Runnable() {
