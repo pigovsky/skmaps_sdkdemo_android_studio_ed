@@ -18,7 +18,7 @@ import com.skobbler.ngx.tracks.SKTrackElementType;
 import com.skobbler.ngx.tracks.SKTracksFile;
 import com.skobbler.ngx.tracks.SKTracksPoint;
 import com.skobbler.sdkdemo.R;
-import com.skobbler.sdkdemo.application.DemoApplication;
+import com.skobbler.sdkdemo.application.App;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,7 +40,7 @@ public class TrackElementsActivity extends Activity {
     
     private Map<Integer, List<Object>> elementsPerLevel = new HashMap<Integer, List<Object>>();
     
-    private DemoApplication app;
+    private App app;
     
     private int currentLevel;
     
@@ -50,7 +50,7 @@ public class TrackElementsActivity extends Activity {
         findViewById(R.id.label_operation_in_progress).setVisibility(View.GONE);
         listView = (ListView) findViewById(R.id.list_view);
         listView.setVisibility(View.VISIBLE);
-        app = DemoApplication.getInstance();
+        app = App.getInstance();
         if (loadedFile == null) {
             loadedFile = SKTracksFile.loadAtPath(app.getMapResourcesDirPath() + "GPXTracks/foxboro.gpx");
         }

@@ -17,7 +17,7 @@ import com.skobbler.ngx.util.SKLogging;
 import com.skobbler.ngx.versioning.SKMapUpdateListener;
 import com.skobbler.ngx.versioning.SKVersioningManager;
 import com.skobbler.sdkdemo.R;
-import com.skobbler.sdkdemo.application.DemoApplication;
+import com.skobbler.sdkdemo.application.App;
 import com.skobbler.sdkdemo.util.DemoUtils;
 
 import java.io.File;
@@ -53,7 +53,7 @@ public class SplashActivity extends Activity implements SKPrepareMapTextureListe
         // determine path where map resources should be copied on the device
         mapResourcesDirPath = (externalDir != null ? externalDir : getFilesDir() ) + SKMAPS_DIR;
 
-        DemoApplication.getInstance().setMapResourcesDirPath(mapResourcesDirPath);
+        App.getInstance().setMapResourcesDirPath(mapResourcesDirPath);
 
         
         if (!new File(mapResourcesDirPath).exists()) {
@@ -63,12 +63,12 @@ public class SplashActivity extends Activity implements SKPrepareMapTextureListe
             // copy some other resource needed
             copyOtherResources();
             prepareMapCreatorFile();
-            DemoApplication.getInstance().copyMarkImage(this);
+            App.getInstance().copyMarkImage(this);
         } else {
             // map resources have already been copied - start the map activity
             Toast.makeText(SplashActivity.this, "Map resources copied in a previous run", Toast.LENGTH_SHORT).show();
             prepareMapCreatorFile();
-            DemoApplication.getInstance().copyMarkImage(this);
+            App.getInstance().copyMarkImage(this);
             initializeLibrary();
             Executors.newScheduledThreadPool(1).schedule(new Runnable() {
                 @Override
@@ -129,7 +129,7 @@ public class SplashActivity extends Activity implements SKPrepareMapTextureListe
      * Copies the map creator file from assets to a storage.
      */
     private void prepareMapCreatorFile() {
-        final DemoApplication app = DemoApplication.getInstance();
+        final App app = App.getInstance();
         final Thread prepareGPXFileThread = new Thread(new Runnable() {
             
             @Override
@@ -160,7 +160,7 @@ public class SplashActivity extends Activity implements SKPrepareMapTextureListe
      * Initializes the SKMaps framework
      */
     private void initializeLibrary() {
-        final DemoApplication app = DemoApplication.getInstance();
+        final App app = App.getInstance();
         // get object holding map initialization settings
         SKMapsInitSettings initMapSettings = new SKMapsInitSettings();
         // set path to map resources and initial map style

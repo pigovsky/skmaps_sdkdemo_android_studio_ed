@@ -10,7 +10,7 @@ import android.widget.Toast;
 
 import com.skobbler.ngx.SKCoordinate;
 import com.skobbler.sdkdemo.R;
-import com.skobbler.sdkdemo.application.DemoApplication;
+import com.skobbler.sdkdemo.application.App;
 import com.skobbler.sdkdemo.util.ISKCoordinateFound;
 import com.skobbler.sdkdemo.util.SearchTask;
 
@@ -59,7 +59,7 @@ public class SearchByAddressActivity extends Activity implements View.OnClickLis
                     return;
                 }
                 findViewById(R.id.progressbarSearchByAddress).setVisibility(View.GONE);
-                DemoApplication.getInstance().goTo(location);
+                App.getInstance().goTo(location);
                 finish();
 
             }

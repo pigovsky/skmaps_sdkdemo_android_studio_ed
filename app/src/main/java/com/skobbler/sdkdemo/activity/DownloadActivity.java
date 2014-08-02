@@ -11,7 +11,7 @@ import android.widget.Toast;
 
 import com.skobbler.ngx.packages.SKPackageManager;
 import com.skobbler.sdkdemo.R;
-import com.skobbler.sdkdemo.application.DemoApplication;
+import com.skobbler.sdkdemo.application.App;
 import com.skobbler.sdkdemo.model.DownloadPackage;
 
 import org.apache.http.HttpResponse;
@@ -40,7 +40,7 @@ public class DownloadActivity extends Activity {
      */
     private static String packagesPath;
     
-    private DemoApplication application;
+    private App application;
     
     private ProgressBar progressBar;
     
@@ -71,7 +71,7 @@ public class DownloadActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        application = DemoApplication.getInstance();
+        application = App.getInstance();
         setContentView(R.layout.activity_download);
         packagesPath = application.getMapResourcesDirPath() + "/Maps/downloads/";
         progressBar = (ProgressBar) findViewById(R.id.download_progress_bar);

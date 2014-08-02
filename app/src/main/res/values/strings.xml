@@ -57,5 +57,7 @@
     <string name="action_settings">Settings</string>
     <string name="typeAddress">Type address to be searched</string>
     <string name="searchByAddress">Search by address</string>
+    <string name="start">Start</string>
+    <string name="finish">Finish</string>
 
 </resources>

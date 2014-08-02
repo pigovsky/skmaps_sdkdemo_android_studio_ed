@@ -10,7 +10,7 @@ import com.skobbler.ngx.SKCoordinate;
 import com.skobbler.ngx.search.SKSearchResult;
 import com.skobbler.ngx.search.SKSearchResultParent;
 import com.skobbler.sdkdemo.R;
-import com.skobbler.sdkdemo.application.DemoApplication;
+import com.skobbler.sdkdemo.application.App;
 
 
 /**
@@ -18,13 +18,13 @@ import com.skobbler.sdkdemo.application.DemoApplication;
  */
 public class ReverseGeocodingActivity extends Activity {
     
-    private DemoApplication application;
+    private App application;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_reverse_geocoding);
-        application = DemoApplication.getInstance();
+        application = App.getInstance();
     }
     
     public void onClick(View v) {

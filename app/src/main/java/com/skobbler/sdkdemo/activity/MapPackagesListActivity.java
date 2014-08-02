@@ -16,7 +16,7 @@ import android.widget.TextView;
 
 import com.skobbler.ngx.packages.SKPackageManager;
 import com.skobbler.sdkdemo.R;
-import com.skobbler.sdkdemo.application.DemoApplication;
+import com.skobbler.sdkdemo.application.App;
 import com.skobbler.sdkdemo.model.DownloadPackage;
 import com.skobbler.sdkdemo.util.MapDataParser;
 
@@ -34,7 +34,7 @@ public class MapPackagesListActivity extends Activity {
     
     private ListView listView;
     
-    private DemoApplication application;
+    private App application;
     
     /**
      * Packages currently shown in list
@@ -48,7 +48,7 @@ public class MapPackagesListActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list);
         listView = (ListView) findViewById(R.id.list_view);
-        application = DemoApplication.getInstance();
+        application = App.getInstance();
         
         if (application.getPackageMap() != null) {
             // map packages are already available
